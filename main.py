@@ -1,5 +1,6 @@
 import customtkinter
 from get_currency import * 
+from get_price import get_price
 
 customtkinter.set_default_color_theme("green")
 
@@ -8,6 +9,7 @@ window.geometry("500x600")
 
 dic_conv_available = conv_name()
 available_currencies = currency_name()
+currecy_price_text = customtkinter.CTkLabel(master=window, text="")
 
 selected_origin = customtkinter.StringVar(value="Moeda de origem  ⬇")
 selected_target = customtkinter.StringVar(value="Moeda de destino  ⬇")
@@ -22,10 +24,10 @@ def toggle_theme():
         theme_switch.configure(text="Modo Light")
 
 def update_target_options(choice):
-    destinatinations = dic_conv_available.get(choice, [])
-    if destinatinations:
-        selected_target.set(destinatinations[0]) 
-        target_currency.configure(command=lambda: open_currency_selector(destinatinations, selected_target, "Moeda de destino"))
+    destinations = dic_conv_available.get(choice, [])
+    if destinations:
+        selected_target.set(f"{destinations[0]} - {available_currencies[destinations[0]]}")
+        target_currency.configure(command=lambda: open_currency_selector(destinations, selected_target, "Moeda de destino"))
 
 
 def open_currency_selector(currency, var_to_set, title):
@@ -48,7 +50,25 @@ def open_currency_selector(currency, var_to_set, title):
         btn.pack(pady=2)
 
 def currency_converter():
-    print("Converter de:", selected_origin.get(), "para:", selected_target.get())
+    if " - " not in selected_origin.get() or " - " not in selected_target.get():
+        currecy_price_text.configure(text="⚠️ Selecione as duas moedas.")
+        return
+    
+    source_currency = selected_origin.get().split(" - ")[0].strip()
+    dest_currency = selected_target.get().split(" - ")[0].strip()
+
+    try:
+        amount = float(amount_entry.get().replace(",", "."))
+    except ValueError:
+        currecy_price_text.configure(text="❌ Digite um valor numérico válido.")
+        return
+
+    price = float(get_price(source_currency, dest_currency))
+    result = amount * price
+
+    currecy_price_text.configure(
+        text=f"💱 {amount} {source_currency} = {result:.2f} {dest_currency}"
+    )
 
 title = customtkinter.CTkLabel(master=window, text="Conversor de Moedas", font=("Press Start 2P", 20))
 theme_switch = customtkinter.CTkSwitch(master=window, text="Modo Dark", command=toggle_theme)
@@ -70,6 +90,11 @@ target_currency = customtkinter.CTkButton(master=window,
                                           height=30,
                                           command=lambda: open_currency_selector(["Selecione origem"], selected_target, "Moeda de destino")
 )
+
+amount_label = customtkinter.CTkLabel(master=window, text="Valor a converter:")
+amount_entry = customtkinter.CTkEntry(master=window, placeholder_text="Ex: 10")
+
+
 convert_button = customtkinter.CTkButton(master=window, text='Converter', command=currency_converter)
 
 
@@ -90,7 +115,11 @@ currency_origin.pack(padx=10)
 target_currency_entry.pack(padx=10,pady=3)
 target_currency.pack(padx=10)
 
+amount_label.pack(pady=3)
+amount_entry.pack(pady=3)
+
 convert_button.pack(padx=10,pady=10)
+currecy_price_text.pack(padx=10,pady=10)
 currency_list.pack(padx=10,pady=10)
 
 
